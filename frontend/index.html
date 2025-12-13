@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Hệ thống chữ ký số RSA cho doanh nghiệp">
+    <title>Hệ Thống Chữ Ký Số | Digital Signature System</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="spinner-overlay" id="loadingSpinner">
+        <div class="spinner-border text-light" style="width: 3rem; height: 3rem;"></div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-xl-2 sidebar">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <span class="brand-text">DigiSign</span>
+                </div>
+
+                <ul class="nav nav-pills flex-column" id="mainNav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" data-tab="sign-verify">
+                            <i class="bi bi-pen"></i> Ký & Xác Minh
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="directory">
+                            <i class="bi bi-key"></i> Thư Mục Khóa
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="generate">
+                            <i class="bi bi-plus-circle"></i> Sinh Khóa Mới
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="mt-auto pt-4">
+                    <div class="text-muted small px-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        RSA + MD5 Encryption<br>
+                        <small>Tự implement - No crypto lib</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-9 col-xl-10 main-content">
+                <!-- Tab 1: Sign & Verify -->
+                <div class="tab-content" id="sign-verify-tab">
+                    <div class="page-header">
+                        <h1><i class="bi bi-pen me-2"></i>Ký & Xác Minh Tài Liệu</h1>
+                        <p>Upload tài liệu để tạo chữ ký số hoặc xác minh tính xác thực</p>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Sign Section -->
+                        <div class="col-lg-6">
+                            <div class="glass-card h-100">
+                                <div class="card-header-custom">
+                                    <div class="card-icon sign">
+                                        <i class="bi bi-pen"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0">Ký Tài Liệu</h5>
+                                        <small class="text-muted">Tạo chữ ký số</small>
+                                    </div>
+                                </div>
+
+                                <div class="drop-zone" id="signFileZone">
+                                    <i class="bi bi-file-earmark-arrow-up"></i>
+                                    <p class="mb-0">Kéo thả file cần ký</p>
+                                    <small class="text-muted">hoặc click để chọn</small>
+                                    <input type="file" id="signFileInput" class="d-none">
+                                </div>
+                                <div class="file-info" id="signFileInfo">
+                                    <i class="bi bi-file-earmark-check me-2"></i>
+                                    <span id="signFileName"></span>
+                                </div>
+
+                                <div class="drop-zone mt-3" id="privateKeyZone">
+                                    <i class="bi bi-key"></i>
+                                    <p class="mb-0">Upload Private Key (.key)</p>
+                                    <small class="text-muted">Khóa riêng tư của bạn</small>
+                                    <input type="file" id="privateKeyInput" class="d-none" accept=".key">
+                                </div>
+                                <div class="file-info" id="privateKeyInfo">
+                                    <i class="bi bi-key-fill me-2"></i>
+                                    <span id="privateKeyName"></span>
+                                </div>
+
+                                <button class="btn btn-gradient w-100 mt-4" id="signBtn" disabled>
+                                    <i class="bi bi-pen me-2"></i>Ký Tài Liệu
+                                </button>
+
+                                <div class="result-alert" id="signResult"></div>
+                            </div>
+                        </div>
+
+                        <!-- Verify Section -->
+                        <div class="col-lg-6">
+                            <div class="glass-card h-100">
+                                <div class="card-header-custom">
+                                    <div class="card-icon verify">
+                                        <i class="bi bi-shield-check"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0">Xác Minh Chữ Ký</h5>
+                                        <small class="text-muted">Kiểm tra tính xác thực</small>
+                                    </div>
+                                </div>
+
+                                <div class="drop-zone" id="verifyFileZone">
+                                    <i class="bi bi-file-earmark-arrow-up"></i>
+                                    <p class="mb-0">Kéo thả file gốc</p>
+                                    <small class="text-muted">hoặc click để chọn</small>
+                                    <input type="file" id="verifyFileInput" class="d-none">
+                                </div>
+                                <div class="file-info" id="verifyFileInfo">
+                                    <i class="bi bi-file-earmark-check me-2"></i>
+                                    <span id="verifyFileName"></span>
+                                </div>
+
+                                <div class="drop-zone mt-3" id="signatureZone">
+                                    <i class="bi bi-file-earmark-lock"></i>
+                                    <p class="mb-0">Upload Chữ Ký (.sig)</p>
+                                    <small class="text-muted">File chữ ký cần xác minh</small>
+                                    <input type="file" id="signatureInput" class="d-none" accept=".sig">
+                                </div>
+                                <div class="file-info" id="signatureInfo">
+                                    <i class="bi bi-file-earmark-lock-fill me-2"></i>
+                                    <span id="signatureName"></span>
+                                </div>
+
+                                <div class="mt-3">
+                                    <label class="form-label">Chọn người ký từ thư mục</label>
+                                    <select class="form-select" id="signerSelect">
+                                        <option value="">-- Chọn người ký --</option>
+                                    </select>
+                                </div>
+
+                                <button class="btn btn-gradient-success w-100 mt-4" id="verifyBtn" disabled>
+                                    <i class="bi bi-shield-check me-2"></i>Xác Minh Chữ Ký
+                                </button>
+
+                                <div class="result-alert" id="verifyResult"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Directory -->
+                <div class="tab-content d-none" id="directory-tab">
+                    <div class="page-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1><i class="bi bi-key me-2"></i>Thư Mục Khóa Công Khai</h1>
+                            <p>Danh sách khóa công khai đã đăng ký trong hệ thống</p>
+                        </div>
+                        <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#registerModal">
+                            <i class="bi bi-plus-lg me-2"></i>Đăng Ký Khóa
+                        </button>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="table-responsive">
+                            <table class="table table-glass mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Họ Tên</th>
+                                        <th>Phòng Ban</th>
+                                        <th>Ngày Đăng Ký</th>
+                                        <th>Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="directoryTable">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                            Chưa có khóa nào được đăng ký
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Generate Keys -->
+                <div class="tab-content d-none" id="generate-tab">
+                    <div class="page-header">
+                        <h1><i class="bi bi-plus-circle me-2"></i>Sinh Cặp Khóa Mới</h1>
+                        <p>Tạo cặp khóa RSA để ký tài liệu số</p>
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-lg-6">
+                            <div class="glass-card">
+                                <div class="card-header-custom">
+                                    <div class="card-icon keys">
+                                        <i class="bi bi-key"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0">Cặp Khóa Mới</h5>
+                                        <small class="text-muted">RSA Encryption</small>
+                                    </div>
+                                </div>
+
+                                <form id="generateForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Họ và Tên *</label>
+                                        <input type="text" class="form-control" id="genName" 
+                                               placeholder="Nguyễn Văn A" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Phòng Ban *</label>
+                                        <input type="text" class="form-control" id="genDepartment" 
+                                               placeholder="IT Security" required>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label">Kích Thước Khóa</label>
+                                        <select class="form-select" id="genKeySize">
+                                            <option value="512">512-bit (Nhanh, demo)</option>
+                                            <option value="1024" selected>1024-bit (Cân bằng)</option>
+                                            <option value="2048">2048-bit (An toàn, chậm)</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <strong>Quan trọng:</strong> Private key sẽ được tải về. 
+                                        Hãy giữ an toàn và không chia sẻ!
+                                    </div>
+
+                                    <button type="submit" class="btn btn-gradient w-100">
+                                        <i class="bi bi-magic me-2"></i>Sinh Khóa & Tải Về
+                                    </button>
+                                </form>
+
+                                <div class="result-alert" id="generateResult"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-key me-2"></i>Đăng Ký Public Key
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="registerForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Họ và Tên *</label>
+                            <input type="text" class="form-control" id="regName" 
+                                   placeholder="Nguyễn Văn A" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phòng Ban *</label>
+                            <input type="text" class="form-control" id="regDepartment" 
+                                   placeholder="IT Security" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Public Key File (.key) *</label>
+                            <input type="file" class="form-control" id="regPublicKey" 
+                                   accept=".key" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Hủy
+                        </button>
+                        <button type="submit" class="btn btn-gradient">
+                            Đăng Ký
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
