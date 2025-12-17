@@ -1,10 +1,7 @@
-"""
-Module sinh và kiểm tra số nguyên tố
-"""
+# Module sinh và kiểm tra số nguyên tố
 
 import random
 from .math_utils import power_mod
-
 
 def miller_rabin(n, k=5):
     """
@@ -42,9 +39,8 @@ def miller_rabin(n, k=5):
     
     return True
 
-
 def generate_prime(bits=16):
-    """Sinh số nguyên tố ngẫu nhiên có độ dài bits"""
+    # Sinh số nguyên tố ngẫu nhiên có độ dài bits
     while True:
         n = random.getrandbits(bits)
         n |= (1 << (bits - 1))  # Set bit cao nhất
