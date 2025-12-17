@@ -1,8 +1,3 @@
-"""
-Digital Signature API - FastAPI Server
-Hệ thống chữ ký số cho doanh nghiệp
-"""
-
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -20,26 +15,24 @@ from models import KeyEntry, VerifyResponse, DirectoryResponse, key_directory
 from signature.digital_signature import DigitalSignature
 
 
-# ==================== APP SETUP ====================
-
+# APP SETUP
 app = FastAPI(
     title="Digital Signature API",
-    description="RSA Digital Signature System - Custom Implementation (No crypto library)",
-    version="2.0.0"
+    description="RSA Digital Signature System - Custom RSA + SHA-256 Implementation (No crypto library)",
+    version="3.0.0"  # Tăng version
 )
 
-# CORS middleware cho frontend
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Production: chỉ định domain cụ thể
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# ==================== HELPER FUNCTIONS ====================
-
+# HELPER FUNCTIONS
 def key_to_str(key: tuple) -> str:
     """Convert key tuple (e/d, n) thành string 'exponent:modulus'"""
     return f"{key[0]}:{key[1]}"
@@ -54,15 +47,19 @@ def str_to_key(s: str) -> tuple:
         raise ValueError(f"Invalid key format: {e}")
 
 
-# ==================== API ENDPOINTS ====================
-
+# API ENDPOINTS
 @app.get("/")
 async def root():
     """Health check endpoint"""
     return {
         "status": "ok",
-        "message": "Digital Signature API (Custom RSA + MD5)",
-        "version": "2.0.0",
+        "message": "Digital Signature API - Custom RSA + SHA-256",
+        "version": "3.0.0",
+        "technology": {
+            "hash": "SHA-256 (Custom implementation)",
+            "encryption": "RSA (Custom implementation)",
+            "no_external_crypto": True
+        },
         "endpoints": {
             "generate_keys": "POST /generate-keys",
             "sign": "POST /sign",
@@ -77,7 +74,7 @@ async def root():
 async def generate_keys(
     name: str = Form(...),
     department: str = Form(...),
-    key_size: int = Form(1024)  # 512, 1024, hoặc 2048
+    key_size: int = Form(1024)
 ):
     """
     Sinh cặp khóa RSA mới
@@ -90,6 +87,8 @@ async def generate_keys(
         # Validate key size
         if key_size not in [512, 1024, 2048]:
             raise HTTPException(status_code=400, detail="Key size must be 512, 1024, or 2048")
+        
+        print(f"🔑 Generating {key_size}-bit RSA keys for {name}...")
         
         # Sinh khóa
         ds = DigitalSignature(key_size=key_size)
@@ -107,7 +106,9 @@ async def generate_keys(
             created_at=datetime.now().isoformat()
         )
         
-        # Trả về private key để download
+        print(f"✓ Keys generated. Key ID: {key_id}")
+        
+        # Trả về private key
         private_key_str = key_to_str(private_key)
         
         return Response(
@@ -120,6 +121,7 @@ async def generate_keys(
         )
         
     except Exception as e:
+        print(f"✗ Key generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Key generation failed: {str(e)}")
 
 
@@ -132,10 +134,13 @@ async def sign_file(
     Ký file với private key
     
     - Đọc file và private key
-    - Tạo chữ ký số (MD5 hash + RSA)
+    - Hash file bằng SHA-256
+    - Ký hash bằng RSA
     - Trả về file chữ ký (.sig)
     """
     try:
+        print(f"📝 Signing file: {file.filename}")
+        
         # Đọc file data
         file_data = await file.read()
         
@@ -144,16 +149,23 @@ async def sign_file(
         priv_key = str_to_key(key_data.decode('utf-8'))
         
         # Tạo digital signature instance
-        ds = DigitalSignature(key_size=512)  # Key size không quan trọng ở đây
+        ds = DigitalSignature(key_size=512)
+        
+        # Lấy hash để log
+        file_hash = ds.get_hash(file_data)
+        print(f"  SHA-256 Hash: {file_hash}")
         
         # Ký file
         signature = ds.sign(file_data, private_key=priv_key)
+        print(f"  Signature: {signature}")
         
         # Convert signature (int) thành bytes
         signature_bytes = str(signature).encode('utf-8')
         
-        # Encode base64 để an toàn
+        # Encode base64
         signature_b64 = base64.b64encode(signature_bytes)
+        
+        print(f"✓ File signed successfully")
         
         # Trả về file chữ ký
         return Response(
@@ -165,8 +177,10 @@ async def sign_file(
         )
         
     except ValueError as e:
+        print(f"✗ Signing failed: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid key: {str(e)}")
     except Exception as e:
+        print(f"✗ Signing failed: {e}")
         raise HTTPException(status_code=500, detail=f"Signing failed: {str(e)}")
 
 
@@ -180,11 +194,14 @@ async def verify_file(
     """
     Xác minh chữ ký của file
     
-    - Cần: file gốc, file chữ ký, và public key (từ directory hoặc upload)
-    - Verify signature với public key
-    - Trả về kết quả xác minh
+    Đảm bảo 3 tính chất:
+    1. Toàn vẹn (Integrity): File không bị sửa đổi
+    2. Xác thực (Authentication): Đúng người ký
+    3. Chống chối bỏ (Non-repudiation): Không thể phủ nhận
     """
     try:
+        print(f"🔍 Verifying signature for: {file.filename}")
+        
         # Đọc file data
         file_data = await file.read()
         
@@ -195,12 +212,11 @@ async def verify_file(
         
         # Lấy public key
         if key_id and key_id in key_directory:
-            # Từ directory
             entry = key_directory[key_id]
             pub_key = str_to_key(entry.public_key)
             signer = f"{entry.name} ({entry.department})"
+            print(f"  Signer: {signer}")
         elif public_key_file:
-            # Từ file upload
             key_data = await public_key_file.read()
             pub_key = str_to_key(key_data.decode('utf-8'))
             signer = "Uploaded Key"
@@ -210,20 +226,40 @@ async def verify_file(
                 detail="Must provide either key_id or public_key_file"
             )
         
-        # Verify
+        # Tạo DS instance
         ds = DigitalSignature(key_size=512)
+        
+        # Log hash
+        file_hash = ds.get_hash(file_data)
+        print(f"  SHA-256 Hash: {file_hash}")
+        
+        # ===== PHẦN NÀY BỊ THIẾU - THÊM VÀO =====
+        # Verify signature
         valid = ds.verify(file_data, sig_int, public_key=pub_key)
+        
+        print(f"  Result: {'✓ VALID' if valid else '✗ INVALID'}")
+        # ========================================
         
         return VerifyResponse(
             valid=valid,
-            message="✓ Signature is VALID - Document is authentic" if valid 
-                   else "✗ Signature is INVALID - Document may be tampered",
+            message=(
+                "✓ CHỮ KÝ HỢP LỆ\n"
+                "• Tài liệu KHÔNG bị sửa đổi (Toàn vẹn)\n"
+                "• Người ký XÁC THỰC đúng (Xác thực)\n"
+                "• Không thể phủ nhận đã ký (Chống chối bỏ)"
+            ) if valid else (
+                "✗ CHỮ KÝ KHÔNG HỢP LỆ\n"
+                "• Tài liệu có thể đã bị SỬA ĐỔI\n"
+                "• HOẶC sai người ký\n"
+                "⚠️ CẢNH BÁO: Không sử dụng tài liệu này!"
+            ),
             signer=signer if valid else None
         )
         
     except HTTPException:
         raise
     except Exception as e:
+        print(f"✗ Verification failed: {e}")
         raise HTTPException(status_code=500, detail=f"Verification failed: {str(e)}")
 
 
@@ -241,7 +277,7 @@ async def register_key(
     public_key: UploadFile = File(...)
 ):
     """
-    Đăng ký public key có sẵn vào directory
+    Đăng ký public key vào directory
     
     - Upload public key file
     - Validate format
@@ -267,6 +303,8 @@ async def register_key(
             created_at=datetime.now().isoformat()
         )
         
+        print(f"✓ Public key registered: {name} (ID: {key_id})")
+        
         return {
             "message": "Public key registered successfully",
             "key_id": key_id
@@ -286,13 +324,19 @@ async def delete_key(key_id: str):
     
     del key_directory[key_id]
     
+    print(f"✓ Key deleted: {key_id}")
+    
     return {"message": "Key deleted successfully"}
 
 
-# ==================== RUN SERVER ====================
-
+# RUN SERVER
 if __name__ == "__main__":
     import uvicorn
-    print("🚀 Starting Digital Signature API Server...")
-    print("📝 API Documentation: http://localhost:8000/docs")
+    print("=" * 70)
+    print("🚀 Starting Digital Signature API Server")
+    print("=" * 70)
+    print("📝 Technology: Custom RSA + SHA-256 (No external crypto library)")
+    print("🌐 Server: http://localhost:8000")
+    print("📚 API Docs: http://localhost:8000/docs")
+    print("=" * 70)
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

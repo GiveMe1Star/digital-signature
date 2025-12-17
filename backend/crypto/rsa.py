@@ -1,15 +1,11 @@
-"""
-Implement RSA Algorithm
-"""
+# Implement RSA Algorithm
 
 import random
 from utils.math_utils import gcd, mod_inverse, power_mod
 from utils.prime_utils import generate_prime
 
-
 class RSA:
-    """Class implement thuật toán RSA"""
-    
+    # Class implement thuật toán RSA
     def __init__(self, key_size=512):
         self.key_size = key_size
         self.public_key = None
@@ -77,7 +73,7 @@ class RSA:
     
     
     def encrypt(self, plaintext, public_key=None):
-        """Mã hóa: c = m^e mod n"""
+        # Mã hóa: c = m^e mod n
         if public_key is None:
             public_key = self.public_key
         
@@ -90,7 +86,7 @@ class RSA:
     
     
     def decrypt(self, ciphertext, private_key=None):
-        """Giải mã: m = c^d mod n"""
+        # Giải mã: m = c^d mod n
         if private_key is None:
             private_key = self.private_key
         

@@ -54,8 +54,11 @@
                 <div class="mt-auto pt-4">
                     <div class="text-muted small px-3">
                         <i class="bi bi-info-circle me-2"></i>
-                        RSA + MD5 Encryption<br>
-                        <small>Tự implement - No crypto lib</small>
+                        <strong>RSA + SHA-256</strong><br>
+                        <small>Custom Implementation</small><br>
+                        <small class="text-success">✓ Toàn vẹn</small><br>
+                        <small class="text-success">✓ Xác thực</small><br>
+                        <small class="text-success">✓ Chống chối bỏ</small>
                     </div>
                 </div>
             </div>
@@ -66,7 +69,7 @@
                 <div class="tab-content" id="sign-verify-tab">
                     <div class="page-header">
                         <h1><i class="bi bi-pen me-2"></i>Ký & Xác Minh Tài Liệu</h1>
-                        <p>Upload tài liệu để tạo chữ ký số hoặc xác minh tính xác thực</p>
+                        <p>Đảm bảo tính toàn vẹn, xác thực và chống chối bỏ cho tài liệu nội bộ</p>
                     </div>
 
                     <div class="row g-4">
@@ -79,14 +82,14 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0">Ký Tài Liệu</h5>
-                                        <small class="text-muted">Tạo chữ ký số</small>
+                                        <small class="text-muted">Tạo chữ ký số (SHA-256 + RSA)</small>
                                     </div>
                                 </div>
 
                                 <div class="drop-zone" id="signFileZone">
                                     <i class="bi bi-file-earmark-arrow-up"></i>
                                     <p class="mb-0">Kéo thả file cần ký</p>
-                                    <small class="text-muted">hoặc click để chọn</small>
+                                    <small class="text-muted">Hợp đồng, công văn, báo cáo...</small>
                                     <input type="file" id="signFileInput" class="d-none">
                                 </div>
                                 <div class="file-info" id="signFileInfo">
@@ -105,7 +108,12 @@
                                     <span id="privateKeyName"></span>
                                 </div>
 
-                                <button class="btn btn-gradient w-100 mt-4" id="signBtn" disabled>
+                                <div class="alert alert-warning mt-3" style="background: rgba(255, 193, 7, 0.1); border-color: rgba(255, 193, 7, 0.3);">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <small><strong>Lưu ý:</strong> Chữ ký số có giá trị pháp lý. Chỉ ký các tài liệu đã được xem xét kỹ.</small>
+                                </div>
+
+                                <button class="btn btn-gradient w-100 mt-3" id="signBtn" disabled>
                                     <i class="bi bi-pen me-2"></i>Ký Tài Liệu
                                 </button>
 
@@ -129,7 +137,7 @@
                                 <div class="drop-zone" id="verifyFileZone">
                                     <i class="bi bi-file-earmark-arrow-up"></i>
                                     <p class="mb-0">Kéo thả file gốc</p>
-                                    <small class="text-muted">hoặc click để chọn</small>
+                                    <small class="text-muted">File cần xác minh</small>
                                     <input type="file" id="verifyFileInput" class="d-none">
                                 </div>
                                 <div class="file-info" id="verifyFileInfo">
@@ -140,7 +148,7 @@
                                 <div class="drop-zone mt-3" id="signatureZone">
                                     <i class="bi bi-file-earmark-lock"></i>
                                     <p class="mb-0">Upload Chữ Ký (.sig)</p>
-                                    <small class="text-muted">File chữ ký cần xác minh</small>
+                                    <small class="text-muted">File chữ ký đi kèm</small>
                                     <input type="file" id="signatureInput" class="d-none" accept=".sig">
                                 </div>
                                 <div class="file-info" id="signatureInfo">
@@ -149,13 +157,21 @@
                                 </div>
 
                                 <div class="mt-3">
-                                    <label class="form-label">Chọn người ký từ thư mục</label>
+                                    <label class="form-label">
+                                        <i class="bi bi-person-badge me-1"></i>
+                                        Chọn người ký (từ thư mục)
+                                    </label>
                                     <select class="form-select" id="signerSelect">
                                         <option value="">-- Chọn người ký --</option>
                                     </select>
                                 </div>
 
-                                <button class="btn btn-gradient-success w-100 mt-4" id="verifyBtn" disabled>
+                                <div class="alert alert-info mt-3" style="background: rgba(13, 110, 253, 0.1); border-color: rgba(13, 110, 253, 0.3);">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <small><strong>Cách thức:</strong> Hệ thống sẽ so sánh hash của file với chữ ký đã giải mã.</small>
+                                </div>
+
+                                <button class="btn btn-gradient-success w-100 mt-3" id="verifyBtn" disabled>
                                     <i class="bi bi-shield-check me-2"></i>Xác Minh Chữ Ký
                                 </button>
 
@@ -170,7 +186,7 @@
                     <div class="page-header d-flex justify-content-between align-items-center">
                         <div>
                             <h1><i class="bi bi-key me-2"></i>Thư Mục Khóa Công Khai</h1>
-                            <p>Danh sách khóa công khai đã đăng ký trong hệ thống</p>
+                            <p>Danh sách nhân viên có quyền ký tài liệu trong tổ chức</p>
                         </div>
                         <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#registerModal">
                             <i class="bi bi-plus-lg me-2"></i>Đăng Ký Khóa
@@ -193,12 +209,17 @@
                                     <tr>
                                         <td colspan="5" class="text-center text-muted py-4">
                                             <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                            Chưa có khóa nào được đăng ký
+                                            Chưa có nhân viên nào đăng ký khóa
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-4" style="background: rgba(255, 193, 7, 0.1); border-color: rgba(255, 193, 7, 0.3);">
+                        <i class="bi bi-shield-exclamation me-2"></i>
+                        <strong>Bảo mật:</strong> Chỉ người có Private Key tương ứng mới có thể tạo chữ ký hợp lệ.
                     </div>
                 </div>
 
@@ -206,7 +227,7 @@
                 <div class="tab-content d-none" id="generate-tab">
                     <div class="page-header">
                         <h1><i class="bi bi-plus-circle me-2"></i>Sinh Cặp Khóa Mới</h1>
-                        <p>Tạo cặp khóa RSA để ký tài liệu số</p>
+                        <p>Tạo cặp khóa RSA cho nhân viên mới hoặc gia hạn khóa</p>
                     </div>
 
                     <div class="row justify-content-center">
@@ -218,36 +239,51 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0">Cặp Khóa Mới</h5>
-                                        <small class="text-muted">RSA Encryption</small>
+                                        <small class="text-muted">RSA Encryption (Custom Implementation)</small>
                                     </div>
                                 </div>
 
                                 <form id="generateForm">
                                     <div class="mb-3">
-                                        <label class="form-label">Họ và Tên *</label>
+                                        <label class="form-label">
+                                            <i class="bi bi-person me-1"></i>Họ và Tên *
+                                        </label>
                                         <input type="text" class="form-control" id="genName" 
                                                placeholder="Nguyễn Văn A" required>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Phòng Ban *</label>
+                                        <label class="form-label">
+                                            <i class="bi bi-building me-1"></i>Phòng Ban / Bộ Phận *
+                                        </label>
                                         <input type="text" class="form-control" id="genDepartment" 
-                                               placeholder="IT Security" required>
+                                               placeholder="Kế toán / IT / Nhân sự..." required>
                                     </div>
 
                                     <div class="mb-4">
-                                        <label class="form-label">Kích Thước Khóa</label>
+                                        <label class="form-label">
+                                            <i class="bi bi-gear me-1"></i>Kích Thước Khóa
+                                        </label>
                                         <select class="form-select" id="genKeySize">
-                                            <option value="512">512-bit (Nhanh, demo)</option>
-                                            <option value="1024" selected>1024-bit (Cân bằng)</option>
-                                            <option value="2048">2048-bit (An toàn, chậm)</option>
+                                            <option value="512">512-bit (Nhanh, thử nghiệm)</option>
+                                            <option value="1024" selected>1024-bit (Khuyến nghị cho doanh nghiệp)</option>
+                                            <option value="2048">2048-bit (Bảo mật cao, chậm hơn)</option>
                                         </select>
+                                        <small class="text-muted mt-1 d-block">
+                                            Khóa càng lớn càng an toàn nhưng xử lý chậm hơn
+                                        </small>
                                     </div>
 
-                                    <div class="alert alert-info">
-                                        <i class="bi bi-info-circle me-2"></i>
-                                        <strong>Quan trọng:</strong> Private key sẽ được tải về. 
-                                        Hãy giữ an toàn và không chia sẻ!
+                                    <div class="alert alert-danger">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <strong>QUAN TRỌNG:</strong>
+                                        <ul class="mb-0 mt-2">
+                                            <li>Private Key sẽ được tải về máy của bạn</li>
+                                            <li><strong>TUYỆT ĐỐI KHÔNG CHIA SẺ</strong> Private Key với bất kỳ ai</li>
+                                            <li>Lưu trữ Private Key ở nơi an toàn</li>
+                                            <li>Nếu mất Private Key, không thể ký được nữa</li>
+                                            <li>Nếu lộ Private Key, người khác có thể giả mạo chữ ký</li>
+                                        </ul>
                                     </div>
 
                                     <button type="submit" class="btn btn-gradient w-100">
@@ -291,13 +327,17 @@
                             <input type="file" class="form-control" id="regPublicKey" 
                                    accept=".key" required>
                         </div>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <small>Public Key được chia sẻ công khai để mọi người xác minh chữ ký của bạn.</small>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             Hủy
                         </button>
                         <button type="submit" class="btn btn-gradient">
-                            Đăng Ký
+                            <i class="bi bi-check-lg me-2"></i>Đăng Ký
                         </button>
                     </div>
                 </form>

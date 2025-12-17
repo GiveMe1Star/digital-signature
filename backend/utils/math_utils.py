@@ -1,13 +1,10 @@
-"""
-Module chứa các hàm toán học cơ bản cho RSA
-"""
+# Module chứa các hàm toán học cơ bản cho RSA
 
 def gcd(a, b):
     """Tính ước chung lớn nhất"""
     while b != 0:
         a, b = b, a % b
     return a
-
 
 def extended_gcd(a, b):
     """
@@ -23,7 +20,6 @@ def extended_gcd(a, b):
     
     return gcd_val, x, y
 
-
 def mod_inverse(a, m):
     """Tính nghịch đảo modulo"""
     gcd_val, x, y = extended_gcd(a, m)
@@ -32,7 +28,6 @@ def mod_inverse(a, m):
         raise ValueError("Nghịch đảo modulo không tồn tại")
     
     return (x % m + m) % m
-
 
 def power_mod(base, exponent, modulus):
     """
