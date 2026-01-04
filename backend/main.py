@@ -98,7 +98,10 @@ async def sign_file(
         key_data = await private_key.read()
         priv_key = str_to_key(key_data.decode('utf-8'))
         
-        ds = DigitalSignature(key_size=512)
+        # Tính key_size từ modulus n của key
+        key_size = priv_key[1].bit_length()
+        
+        ds = DigitalSignature(key_size=key_size)
         signature = ds.sign(file_data, private_key=priv_key)
         
         signature_bytes = str(signature).encode('utf-8')
@@ -146,7 +149,10 @@ async def verify_file(
                 detail="Must provide either key_id or public_key_file"
             )
         
-        ds = DigitalSignature(key_size=512)
+        # Tính key_size từ modulus n của key
+        key_size = pub_key[1].bit_length()
+        
+        ds = DigitalSignature(key_size=key_size)
         valid = ds.verify(file_data, sig_int, public_key=pub_key)
         
         return VerifyResponse(
@@ -212,9 +218,6 @@ async def delete_key(key_id: str):
         raise HTTPException(status_code=404, detail="Key not found")
     del key_directory[key_id]
     return {"message": "Key deleted successfully"}
-
-
-#  PDF STANDARD SIGNING (PAdES)
 
 # Ký PDF theo chuẩn PAdES với certificate PFX/P12
 @app.post("/sign-pdf")

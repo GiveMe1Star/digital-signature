@@ -15,24 +15,8 @@ from cryptography.hazmat.backends import default_backend
 
 
 class PdfSigner:
-    """
-    Hệ thống ký PDF theo chuẩn PAdES
-    Sử dụng certificate PFX/P12 để ký số nhúng vào PDF
-    """
-    
     @staticmethod
     async def sign_async(pdf_data: bytes, cert_data: bytes, password: str = "") -> tuple[bytes, str]:
-        """
-        Ký PDF với certificate PFX/P12 (async)
-        
-        Args:
-            pdf_data: nội dung file PDF
-            cert_data: nội dung file certificate (PFX/P12)
-            password: mật khẩu certificate
-            
-        Returns:
-            tuple: (signed_pdf_bytes, signer_name)
-        """
         password_bytes = password.encode('utf-8') if password else None
         
         # Validate certificate
@@ -87,15 +71,6 @@ class PdfSigner:
     
     @staticmethod
     def verify(pdf_data: bytes) -> dict:
-        """
-        Xác minh chữ ký trong PDF
-        
-        Args:
-            pdf_data: nội dung file PDF
-            
-        Returns:
-            dict: Thông tin về các chữ ký trong PDF
-        """
         try:
             pdf_reader = PdfFileReader(io.BytesIO(pdf_data))
         except Exception as e:
