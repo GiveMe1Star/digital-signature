@@ -1,8 +1,3 @@
-"""
-PDF Standard Signing Module
-Ký PDF theo chuẩn PAdES sử dụng pyHanko
-"""
-
 import io
 import tempfile
 import os
